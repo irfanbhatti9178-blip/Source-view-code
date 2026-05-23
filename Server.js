@@ -1,30 +1,23 @@
 const express = require('express');
-const fetch = require('node-fetch');
+const axios = require('axios');
+const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const cache = new Map();
-
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    next();
-});
+app.use(cors());
 
 app.get('/proxy', async (req, res) => {
     const targetUrl = req.query.url;
-    if (!targetUrl) return res.status(400).send("URL required");
-
-    if (cache.has(targetUrl)) return res.send(cache.get(targetUrl));
+    if (!targetUrl) return res.status(400).send('URL parameter is missing');
 
     try {
-        const response = await fetch(targetUrl);
-        const data = await response.text();
-        cache.set(targetUrl, data);
-        setTimeout(() => cache.delete(targetUrl), 300000);
-        res.send(data);
-    } catch (err) {
-        res.status(500).send("Error fetching content");
+        const response = await axios.get(targetUrl);
+        res.send(response.data);
+    } catch (error) {
+        res.status(500).send('Could not fetch the URL. Please check the address.');
     }
 });
 
-app.listen(PORT, () => console.log('Proxy running...'));
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
